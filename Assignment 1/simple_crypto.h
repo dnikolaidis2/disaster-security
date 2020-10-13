@@ -1,12 +1,13 @@
-#ifndef SIMPLE_CRYPTO_H_
-#define SIMPLE_CRYPTO_H_
+#ifndef SIMPLE_CRYPTO_H
+#define SIMPLE_CRYPTO_H
 
 #include <stdint.h>
 
 
 void GenerateSecretKey(uint32_t Size, uint8_t * SecretKey);
 
-void OTPEncrypt(uint32_t Size, char * PlainText, char * SecretKey, char * EncryptedText);
-void OTPDecrypt(uint32_t Size, char * EncryptedText, char * SecretKey, char * PlainText);
+void OTP(uint32_t Size, char * Input, char * SecretKey, char * Output);
+void CeasarsCipher(uint32_t Size, char * Input, int32_t ShiftAmount, char * Output);
+void VigenereCipher(uint32_t Size, char * Input, char * SecretKey, char * Output);
 
 #endif

@@ -1,4 +1,5 @@
 #include <stdio.h>
+
 #include "simple_crypto.h"
 
 void GenerateSecretKey(uint32_t Size, uint8_t * SecretKey)
@@ -9,12 +10,29 @@ void GenerateSecretKey(uint32_t Size, uint8_t * SecretKey)
     fclose(fp);
 }
 
-void OTPEncrypt(uint32_t Size, char * PlainText, char * SecretKey, char * EncryptedText)
+void OTP(uint32_t Size, char * Input, char * SecretKey, char * Output)
 {
-
+    for (uint32_t i = 0; i < Size; i++)
+    {
+        Output[i] = Input[i] ^ SecretKey[i];
+    }
 }
 
-void OTPDecrypt(uint32_t Size, char * EncryptedText, char * SecretKey, char * PlainText)
+void CeasarsCipher(uint32_t Size, char * Input, int32_t ShiftAmount, char * Output)
 {
+    for (uint32_t i = 0; i < Size; i++)
+    {
+        Output[i] = Input[i] + ShiftAmount;
+    }
+}
 
+void VigenereCipher(uint32_t Size, char * Input, char * SecretKey, char * Output)
+{
+    for (uint32_t i = 0; i < Size; i++)
+    {
+        Output[i] = Input[i] + (SecretKey[i] - 'A');
+        if (Output[i] > 'Z') {
+            Output[i] = 'A' + (Output[i] % 'Z') - 1;
+        }
+    }
 }
