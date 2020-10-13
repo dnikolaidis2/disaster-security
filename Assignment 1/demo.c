@@ -119,12 +119,12 @@ int main()
     ReadInput(&Size, &UserInput);
     Size = SanitizeInputText(Size, UserInput, true);
     
-    Size = 0;
+    uint32_t SecretSize = 0;
     char * Secret = NULL;
-    ReadInput(&Size, &Secret);
-    Size = SanitizeInputText(Size, UserInput, true);
+    ReadInput(&SecretSize, &Secret);
+    SecretSize = SanitizeInputText(SecretSize, Secret, true);
 
     char * Output = (char *)malloc(Size * sizeof(char));
-    VigenereCipher(Size, UserInput, Secret, Output);
+    VigenereCipher(Size, UserInput, SecretSize, Secret, Output);
     printf("%s", Output);
 }
