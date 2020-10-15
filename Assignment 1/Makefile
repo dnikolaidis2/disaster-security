@@ -6,3 +6,6 @@ all: crypto
 
 crypto:
 	$(CC) $(CFLAGS) -c simple_crypto.c
+
+clean:
+	rm *.o demo

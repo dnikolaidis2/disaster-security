@@ -24,18 +24,18 @@ void ReadInput(uint32_t * SizeRead, char ** ReadInput)
         if (strlen(Buffer) < BUFFER_SIZE - 1 || Buffer[BUFFER_SIZE - 2] == '\n')
         {
             break;
-        }   
+        }
     }
 }
 
-uint32_t SanitizeInputText(uint32_t Size, char * InputText, bool OnlyCapital)
+uint32_t SanitizeInputText(uint32_t Size, char * InputText, bool OnlyCapitalLetters)
 {
     uint32_t ActualSize = 0;
     char * Buffer = (char *)malloc(Size * sizeof(char));
 
     for (uint32_t i = 0; i < Size; i++)
     {
-        if (!OnlyCapital)
+        if (!OnlyCapitalLetters)
         {
             if ((InputText[i] >= '0' && InputText[i] <= '9')
             || (InputText[i] >= 'A' && InputText[i] <= 'Z')
@@ -82,13 +82,13 @@ void PrintByteArray(uint32_t Size, uint8_t * Array, bool AppendNewLine)
     }
 
     if (AppendNewLine)
-    {
         printf("\n");
-    }
 }
 
 int main()
 {
+    // ------------------ OTP ---------------------
+
     {
         printf("[OTP] input: ");
 
@@ -117,7 +117,7 @@ int main()
         free(DecryptedOutput);
     }
 
-    // -----------------------------------------
+    // ------------------ Ceasars ---------------------
 
     {
         printf("[Ceasars] input: ");
@@ -148,7 +148,7 @@ int main()
         free(DecryptedOutput);
     }
 
-    // ----------------------------------------
+    // ------------------ Vigenere ---------------------
 
     {
         printf("[Vigenere] input: ");
@@ -167,7 +167,7 @@ int main()
         VigenereEncrypt(Size, UserInput, KeySize, Key, Output);
         printf("[Vigenere] encrypted: %s\n", Output);
 
-        char * DecryptedOutput = (char *)malloc(Size * sizeof(char) + 1);    
+        char * DecryptedOutput = (char *)malloc(Size * sizeof(char) + 1);
         VigenereDecrypt(Size, Output, KeySize, Key, DecryptedOutput);
         printf("[Vigenere] decrypted: %s\n", DecryptedOutput);
 
