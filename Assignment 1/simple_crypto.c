@@ -2,7 +2,7 @@
 
 #include "simple_crypto.h"
 
-const static char CeasarsAlphabet [] = {
+static const char CeasarsAlphabet [] = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
     'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
@@ -26,15 +26,17 @@ void OTP(uint32_t Size, char * Input, char * SecretKey, char * Output)
     {
         Output[i] = Input[i] ^ SecretKey[i];
     }
+
+    Output[Size] = 0; 
 }
 
 void CeasarsCipher(uint32_t Size, char * Input, int32_t ShiftAmount, char * Output)
 {
-    uint32_t AlphabetSize = sizeof(CeasarsAlphabet)/sizeof(CeasarsAlphabet[0]);
+    int32_t AlphabetSize = sizeof(CeasarsAlphabet)/sizeof(CeasarsAlphabet[0]);
 
     for (uint32_t i = 0; i < Size; i++)
     {
-        uint32_t j = 0;
+        int32_t j = 0;
         for (; j < AlphabetSize; j++)
         {
             if (Input[i] == CeasarsAlphabet[j])
@@ -43,8 +45,17 @@ void CeasarsCipher(uint32_t Size, char * Input, int32_t ShiftAmount, char * Outp
             }
         }
         
-        Output[i] = CeasarsAlphabet[(j + ShiftAmount) % AlphabetSize];
+        if (j + (ShiftAmount % AlphabetSize) < 0)
+        {
+            Output[i] = CeasarsAlphabet[AlphabetSize + (j + (ShiftAmount % AlphabetSize))];
+        }
+        else
+        {
+            Output[i] = CeasarsAlphabet[(j + (ShiftAmount % AlphabetSize)) % AlphabetSize];
+        }
     }
+
+    Output[Size] = 0;
 }
 
 void VigenereEncrypt(uint32_t Size, char * Input, uint32_t SecretSize, char * SecretKey, char * Output)
@@ -58,6 +69,8 @@ void VigenereEncrypt(uint32_t Size, char * Input, uint32_t SecretSize, char * Se
             Output[i] = 'A' + (Output[i] % 'Z') - 1;
         }
     }
+
+    Output[Size] = 0;
 }
 
 void VigenereDecrypt(uint32_t Size, char * Input, uint32_t SecretSize, char * SecretKey, char * Output)
@@ -71,4 +84,6 @@ void VigenereDecrypt(uint32_t Size, char * Input, uint32_t SecretSize, char * Se
             Output[i] = 'Z' - ('A' - Output[i]) + 1;
         }
     }
+
+    Output[Size] = 0;
 }

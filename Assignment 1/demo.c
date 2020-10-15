@@ -17,9 +17,9 @@ void ReadInput(uint32_t * SizeRead, char ** ReadInput)
     char Buffer[BUFFER_SIZE];
     while (fgets(Buffer, BUFFER_SIZE, stdin) != NULL)
     {
+        *ReadInput = (char *)realloc(*ReadInput, (*SizeRead + strlen(Buffer) + 1) * sizeof(char));
+        strcpy(*ReadInput + *SizeRead, Buffer);
         *SizeRead += strlen(Buffer);
-        *ReadInput = (char *)realloc(*ReadInput, (*SizeRead + 1) * sizeof(char));
-        strcpy(*ReadInput, Buffer);
 
         if (strlen(Buffer) < BUFFER_SIZE - 1 || Buffer[BUFFER_SIZE - 2] == '\n')
         {
@@ -66,7 +66,7 @@ uint32_t SanitizeInputText(uint32_t Size, char * InputText, bool OnlyCapital)
 }
 
 // https://stackoverflow.com/a/29477687
-void PrintByteArray(uint32_t Size, uint8_t * Array)
+void PrintByteArray(uint32_t Size, uint8_t * Array, bool AppendNewLine)
 {
     setlocale(LC_ALL, "C");
     uint8_t c;
@@ -80,55 +80,100 @@ void PrintByteArray(uint32_t Size, uint8_t * Array)
         else
             printf("\\x%02x", c);
     }
+
+    if (AppendNewLine)
+    {
+        printf("\n");
+    }
 }
 
 int main()
 {
-    // uint32_t Size = 0;
-    // char * UserInput = NULL;
-    // ReadInput(&Size, &UserInput);
-    // Size = SanitizeInputText(Size, UserInput, false);
-    
-    // char * Secret = (char *)malloc(Size * sizeof(char));
-    // GenerateSecretKey(Size, Secret);
+    {
+        printf("[OTP] input: ");
 
-    // char * Output = (char *)malloc(Size * sizeof(char));
-    // OTP(Size, UserInput, Secret, Output);
+        uint32_t Size = 0;
+        char * UserInput = NULL;
+        ReadInput(&Size, &UserInput);
+        Size = SanitizeInputText(Size, UserInput, false);
+        
+        char * Secret = (char *)malloc(Size * sizeof(char));
+        GenerateSecretKey(Size, Secret);
 
-    // PrintByteArray(Size, Secret);
-    // printf("\n");
-    // PrintByteArray(Size, Output);
-    // printf("\n");
+        char * Output = (char *)malloc(Size * sizeof(char) + 1);
+        OTP(Size, UserInput, Secret, Output);
 
-    // char * DecryptedOutput = (char *)malloc(Size * sizeof(char));
-    // OTP(Size, Output, Secret, DecryptedOutput);
-    // PrintByteArray(Size, DecryptedOutput);
-    // printf("\n");
-    
-    uint32_t Size = 0;
-    char * UserInput = NULL;
-    ReadInput(&Size, &UserInput);
-    Size = SanitizeInputText(Size, UserInput, false);
-    
-    char * Output = (char *)malloc(Size * sizeof(char));
-    CeasarsCipher(Size, UserInput, 4, Output);
-    printf("%s", Output);
+        printf("[OTP] encrypted: ");
+        PrintByteArray(Size, Output, true);
 
-    // uint32_t Size = 0;
-    // char * UserInput = NULL;
-    // ReadInput(&Size, &UserInput);
-    // Size = SanitizeInputText(Size, UserInput, true);
-    
-    // uint32_t SecretSize = 0;
-    // char * Secret = NULL;
-    // ReadInput(&SecretSize, &Secret);
-    // SecretSize = SanitizeInputText(SecretSize, Secret, true);
+        char * DecryptedOutput = (char *)malloc(Size * sizeof(char) + 1);
+        OTP(Size, Output, Secret, DecryptedOutput);
+        printf("[OTP] decrypted: ");
+        PrintByteArray(Size, DecryptedOutput, true);
+        
+        free(UserInput);
+        free(Secret);
+        free(Output);
+        free(DecryptedOutput);
+    }
 
-    // char * Output = (char *)malloc(Size * sizeof(char) + 1);
-    // VigenereEncrypt(Size, UserInput, SecretSize, Secret, Output);
-    // printf("%s\n", Output);
+    // -----------------------------------------
 
-    // char * DecryptedOutput = (char *)malloc(Size * sizeof(char) + 1);    
-    // VigenereDecrypt(Size, Output, SecretSize, Secret, DecryptedOutput);
-    // printf("%s\n", DecryptedOutput);
+    {
+        printf("[Ceasars] input: ");
+
+        uint32_t Size = 0;
+        char * UserInput = NULL;
+        ReadInput(&Size, &UserInput);
+        Size = SanitizeInputText(Size, UserInput, false);
+
+        printf("[Ceasars] key: ");
+        uint32_t KeySize = 0;
+        char * KeyInput = NULL;
+        ReadInput(&KeySize, &KeyInput);
+        int32_t Key = 0;
+        sscanf(KeyInput, "%d", &Key);
+        
+        char * Output = (char *)malloc(Size * sizeof(char) + 1);
+        CeasarsCipher(Size, UserInput, Key, Output);
+        printf("[Ceasars] encrypted: %s\n", Output);
+
+        char * DecryptedOutput = (char *)malloc(Size * sizeof(char) + 1);
+        CeasarsCipher(Size, Output, -Key, DecryptedOutput);
+        printf("[Ceasars] decrypted: %s\n", DecryptedOutput);
+
+        free(UserInput);
+        free(KeyInput);
+        free(Output);
+        free(DecryptedOutput);
+    }
+
+    // ----------------------------------------
+
+    {
+        printf("[Vigenere] input: ");
+        uint32_t Size = 0;
+        char * UserInput = NULL;
+        ReadInput(&Size, &UserInput);
+        Size = SanitizeInputText(Size, UserInput, true);
+        
+        printf("[Vigenere] key: ");
+        uint32_t KeySize = 0;
+        char * Key = NULL;
+        ReadInput(&KeySize, &Key);
+        KeySize = SanitizeInputText(KeySize, Key, true);
+
+        char * Output = (char *)malloc(Size * sizeof(char) + 1);
+        VigenereEncrypt(Size, UserInput, KeySize, Key, Output);
+        printf("[Vigenere] encrypted: %s\n", Output);
+
+        char * DecryptedOutput = (char *)malloc(Size * sizeof(char) + 1);    
+        VigenereDecrypt(Size, Output, KeySize, Key, DecryptedOutput);
+        printf("[Vigenere] decrypted: %s\n", DecryptedOutput);
+
+        free(UserInput);
+        free(Key);
+        free(Output);
+        free(DecryptedOutput);
+    }
 }
