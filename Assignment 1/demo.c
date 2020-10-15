@@ -21,7 +21,7 @@ void ReadInput(uint32_t * SizeRead, char ** ReadInput)
         *ReadInput = (char *)realloc(*ReadInput, (*SizeRead + 1) * sizeof(char));
         strcpy(*ReadInput, Buffer);
 
-        if (strlen(Buffer) < BUFFER_SIZE - 1 || Buffer[BUFFER_SIZE-2] == '\n')
+        if (strlen(Buffer) < BUFFER_SIZE - 1 || Buffer[BUFFER_SIZE - 2] == '\n')
         {
             break;
         }   
@@ -105,26 +105,30 @@ int main()
     // PrintByteArray(Size, DecryptedOutput);
     // printf("\n");
     
-    // uint32_t Size = 0;
-    // char * UserInput = NULL;
-    // ReadInput(&Size, &UserInput);
-    // Size = SanitizeInputText(Size, UserInput, false);
-    
-    // char * Output = (char *)malloc(Size * sizeof(char));
-    // CeasarsCipher(Size, UserInput, 4, Output);
-    // printf("%s", Output);
-
     uint32_t Size = 0;
     char * UserInput = NULL;
     ReadInput(&Size, &UserInput);
-    Size = SanitizeInputText(Size, UserInput, true);
+    Size = SanitizeInputText(Size, UserInput, false);
     
-    uint32_t SecretSize = 0;
-    char * Secret = NULL;
-    ReadInput(&SecretSize, &Secret);
-    SecretSize = SanitizeInputText(SecretSize, Secret, true);
-
     char * Output = (char *)malloc(Size * sizeof(char));
-    VigenereCipher(Size, UserInput, SecretSize, Secret, Output);
+    CeasarsCipher(Size, UserInput, 4, Output);
     printf("%s", Output);
+
+    // uint32_t Size = 0;
+    // char * UserInput = NULL;
+    // ReadInput(&Size, &UserInput);
+    // Size = SanitizeInputText(Size, UserInput, true);
+    
+    // uint32_t SecretSize = 0;
+    // char * Secret = NULL;
+    // ReadInput(&SecretSize, &Secret);
+    // SecretSize = SanitizeInputText(SecretSize, Secret, true);
+
+    // char * Output = (char *)malloc(Size * sizeof(char) + 1);
+    // VigenereEncrypt(Size, UserInput, SecretSize, Secret, Output);
+    // printf("%s\n", Output);
+
+    // char * DecryptedOutput = (char *)malloc(Size * sizeof(char) + 1);    
+    // VigenereDecrypt(Size, Output, SecretSize, Secret, DecryptedOutput);
+    // printf("%s\n", DecryptedOutput);
 }
