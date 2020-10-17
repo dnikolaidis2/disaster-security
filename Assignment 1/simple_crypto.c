@@ -12,7 +12,7 @@ static const char CeasarsAlphabet [] = {
     'y', 'z',
 };
 
-void GenerateSecretKey(uint32_t Size, uint8_t * SecretKey)
+void GenerateSecretKey(size_t Size, char * SecretKey)
 {
     FILE *fp;
     fp = fopen("/dev/urandom", "r");
@@ -20,9 +20,9 @@ void GenerateSecretKey(uint32_t Size, uint8_t * SecretKey)
     fclose(fp);
 }
 
-void OTP(uint32_t Size, char * Input, char * SecretKey, char * Output)
+void OTP(size_t Size, char * Input, char * SecretKey, char * Output)
 {
-    for (uint32_t i = 0; i < Size; i++)
+    for (size_t i = 0; i < Size; i++)
     {
         Output[i] = Input[i] ^ SecretKey[i];
     }
@@ -30,13 +30,13 @@ void OTP(uint32_t Size, char * Input, char * SecretKey, char * Output)
     Output[Size] = 0; 
 }
 
-void CeasarsCipher(uint32_t Size, char * Input, int32_t ShiftAmount, char * Output)
+void CeasarsCipher(size_t Size, char * Input, int ShiftAmount, char * Output)
 {
-    int32_t AlphabetSize = sizeof(CeasarsAlphabet)/sizeof(CeasarsAlphabet[0]);
+    int AlphabetSize = sizeof(CeasarsAlphabet)/sizeof(CeasarsAlphabet[0]);
 
-    for (uint32_t i = 0; i < Size; i++)
+    for (size_t i = 0; i < Size; i++)
     {
-        int32_t j = 0;
+        int j = 0;
         for (; j < AlphabetSize; j++)
         {
             if (Input[i] == CeasarsAlphabet[j])
@@ -58,9 +58,9 @@ void CeasarsCipher(uint32_t Size, char * Input, int32_t ShiftAmount, char * Outp
     Output[Size] = 0;
 }
 
-void VigenereEncrypt(uint32_t Size, char * Input, uint32_t SecretSize, char * SecretKey, char * Output)
+void VigenereEncrypt(size_t Size, char * Input, size_t SecretSize, char * SecretKey, char * Output)
 {
-    for (uint32_t i = 0; i < Size; i++)
+    for (size_t i = 0; i < Size; i++)
     {
         Output[i] = Input[i] + (SecretKey[i % SecretSize] - 'A');
         
@@ -73,9 +73,9 @@ void VigenereEncrypt(uint32_t Size, char * Input, uint32_t SecretSize, char * Se
     Output[Size] = 0;
 }
 
-void VigenereDecrypt(uint32_t Size, char * Input, uint32_t SecretSize, char * SecretKey, char * Output)
+void VigenereDecrypt(size_t Size, char * Input, size_t SecretSize, char * SecretKey, char * Output)
 {
-    for (uint32_t i = 0; i < Size; i++)
+    for (size_t i = 0; i < Size; i++)
     {
         Output[i] = Input[i] - (SecretKey[i % SecretSize] - 'A');
         
