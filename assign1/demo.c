@@ -101,7 +101,7 @@ int main()
         size_t KeySize = 0;
         char * KeyInput = NULL;
         KeySize = getline(&KeyInput, &KeySize, stdin);
-        int32_t Key = 0;
+        int Key = 0;
         sscanf(KeyInput, "%d", &Key);
         
         char * Output = (char *)malloc(Size * sizeof(char) + 1);

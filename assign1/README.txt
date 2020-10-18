@@ -5,6 +5,9 @@ AM 2015030100
 For this Assignment three cryptographic algorithms were implemented composing a small cryptographic 
 library. The project consists of two parts: the demo program and the simple_crypto library.
 
+To run:
+make && ./demo
+
 Simple_crypto
 
 The library consists of five functions:
