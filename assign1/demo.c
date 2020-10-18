@@ -1,3 +1,10 @@
+/* ========================================================================
+   $File: demo.c $
+   $Date: 18/10/2020 $
+   $Creator: Dimitrios Nikolaidis $
+   $AM: 2015030100 $
+   ======================================================================== */
+
 #define _GNU_SOURCE
 
 #include <stdio.h>
@@ -12,6 +19,7 @@ size_t SanitizeInputText(size_t Size, char * InputText, bool OnlyCapitalLetters)
     size_t ActualSize = 0;
     char * Buffer = (char *)malloc(Size * sizeof(char));
 
+    // Reject any invalid character by not including it in the new Buffer
     for (size_t i = 0; i < Size; i++)
     {
         if (!OnlyCapitalLetters)
@@ -34,6 +42,7 @@ size_t SanitizeInputText(size_t Size, char * InputText, bool OnlyCapitalLetters)
         }
     }
 
+    // If characters where rejected move Buffer back into InputText.
     if(ActualSize < Size && ActualSize != 0)
     {
         memcpy(InputText, Buffer, ActualSize);

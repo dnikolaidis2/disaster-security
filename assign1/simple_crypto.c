@@ -1,3 +1,10 @@
+/* ========================================================================
+   $File: simple_crypto.c $
+   $Date: 18/10/2020 $
+   $Creator: Dimitrios Nikolaidis $
+   $AM: 2015030100 $
+   ======================================================================== */
+
 #include <stdio.h>
 
 #include "simple_crypto.h"
@@ -36,6 +43,7 @@ void CeasarsCipher(size_t Size, char * Input, int ShiftAmount, char * Output)
 
     for (size_t i = 0; i < Size; i++)
     {
+        // Search for character in alphabet array and retrieve index.
         int j = 0;
         for (; j < AlphabetSize; j++)
         {
@@ -45,12 +53,15 @@ void CeasarsCipher(size_t Size, char * Input, int ShiftAmount, char * Output)
             }
         }
         
+        // Caclulate cipher result by shifting the index of the alphabet array.
         if (j + (ShiftAmount % AlphabetSize) < 0)
         {
+            // New index is negative. Start from end and subtract.
             Output[i] = CeasarsAlphabet[AlphabetSize + (j + (ShiftAmount % AlphabetSize))];
         }
         else
         {
+            // New index is positive. Bound it to AlphabetSize.
             Output[i] = CeasarsAlphabet[(j + (ShiftAmount % AlphabetSize)) % AlphabetSize];
         }
     }
@@ -62,8 +73,10 @@ void VigenereEncrypt(size_t Size, char * Input, size_t SecretSize, char * Secret
 {
     for (size_t i = 0; i < Size; i++)
     {
+        // Secret can be <= input so we bound the index using % SecretSize to repeat it when its smaller.
         Output[i] = Input[i] + (SecretKey[i % SecretSize] - 'A');
         
+        // Exceded end of range. Caclulate again based on 'A'.
         if (Output[i] > 'Z') 
         {
             Output[i] = 'A' + (Output[i] % 'Z') - 1;
@@ -77,8 +90,10 @@ void VigenereDecrypt(size_t Size, char * Input, size_t SecretSize, char * Secret
 {
     for (size_t i = 0; i < Size; i++)
     {
+        // Secret can be <= input so we bound the index using % SecretSize to repeat it when its smaller.
         Output[i] = Input[i] - (SecretKey[i % SecretSize] - 'A');
         
+        // Ended up before start of range. Caclulate again based on 'Z'.
         if (Output[i] < 'A') 
         {
             Output[i] = 'Z' - ('A' - Output[i]) + 1;
