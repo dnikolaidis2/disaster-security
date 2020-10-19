@@ -5,8 +5,6 @@
    $AM: 2015030100 $
    ======================================================================== */
 
-#define _GNU_SOURCE
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
