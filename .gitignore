@@ -1,3 +1,4 @@
 *.o
 **/demo
+**/assign_2
 .vscode/*

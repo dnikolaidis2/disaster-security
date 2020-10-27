@@ -148,26 +148,20 @@ void
 keygen(unsigned char *password, unsigned char *key, unsigned char *iv,
     int bit_mode)
 {
-
 	/* TODO Task A */
-	// //unsigned char h1_value[EVP_MAX_MD_SIZE];
-    // //int h1_len; 
+	
+	int size = 0;
+	if (bit_mode == 128)
+	{
+		size = EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha1(), NULL, password, strlen(password), 1000, key, iv);
+	}
+	else
+	{
+		size = EVP_BytesToKey(EVP_aes_256_ecb(), EVP_sha1(), NULL, password, strlen(password), 1000, key, iv);
+	}
 
-    // OpenSSL_add_all_digests();
-
-    // EVP_MD_CTX *h1ctx; 
-
-    // //Structure containing the description of the SHA1 hash.
-    // const EVP_MD *h1ptr = EVP_get_digestbyname("SHA1"); 
-
-
-    // h1ctx = EVP_MD_CTX_create();
-    // EVP_DigestInit_ex(h1ctx, h1ptr, NULL);
-    // EVP_DigestUpdate(h1ctx, password, strlen(password));
-    // EVP_DigestFinal_ex(h1ctx, key, &bit_mode);
-    // EVP_MD_CTX_destroy(h1ctx);
+	if(!size) ERR_print_errors_fp(stderr);
 }
-
 
 /*
  * Encrypts the data
@@ -176,9 +170,8 @@ void
 encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
     unsigned char *iv, unsigned char *ciphertext, int bit_mode)
 {
-
 	/* TODO Task B */
-
+	
 }
 
 
