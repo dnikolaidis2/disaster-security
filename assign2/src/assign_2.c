@@ -17,7 +17,7 @@ void print_string(unsigned char *, size_t);
 void usage(void);
 void check_args(char *, char *, unsigned char *, int, int);
 void keygen(unsigned char *, unsigned char *, unsigned char *, int);
-void encrypt(unsigned char *, int, unsigned char *, unsigned char *, 
+int encrypt(unsigned char *, int, unsigned char *, unsigned char *, 
     unsigned char *, int );
 int decrypt(unsigned char *, int, unsigned char *, unsigned char *, 
     unsigned char *, int);
@@ -166,12 +166,38 @@ keygen(unsigned char *password, unsigned char *key, unsigned char *iv,
 /*
  * Encrypts the data
  */
-void
+int
 encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
     unsigned char *iv, unsigned char *ciphertext, int bit_mode)
 {
 	/* TODO Task B */
+	EVP_CIPHER_CTX *ctx;
+
+    int len;
+
+    int ciphertext_len;
+
+    if(!(ctx = EVP_CIPHER_CTX_new())) ERR_print_errors_fp(stderr);
+
+	if (bit_mode == 128)
+	{
+		if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), NULL, key, iv)) ERR_print_errors_fp(stderr);
+	}
+	else
+	{
+		if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, iv)) ERR_print_errors_fp(stderr);
+	}
 	
+    if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len)) ERR_print_errors_fp(stderr);
+	ciphertext_len = len;
+
+    if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len)) ERR_print_errors_fp(stderr);
+    ciphertext_len += len;
+
+    /* Clean up */
+    EVP_CIPHER_CTX_free(ctx);
+
+	return ciphertext_len;
 }
 
 
@@ -187,6 +213,29 @@ decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
 	plaintext_len = 0;
 
 	/*TODO Task C */
+	EVP_CIPHER_CTX *ctx;
+
+    int len;
+
+    if(!(ctx = EVP_CIPHER_CTX_new())) ERR_print_errors_fp(stderr);
+
+	if (bit_mode == 128)
+	{
+		if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_128_ecb(), NULL, key, iv)) ERR_print_errors_fp(stderr);
+	}
+	else
+	{
+		if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, iv)) ERR_print_errors_fp(stderr);
+	}
+	
+    if(1 != EVP_DecryptUpdate(ctx, plaintext, &len, ciphertext, ciphertext_len)) ERR_print_errors_fp(stderr);
+	plaintext_len = len;
+
+    if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)) ERR_print_errors_fp(stderr);
+    plaintext_len += len;
+
+    /* Clean up */
+    EVP_CIPHER_CTX_free(ctx);
 
 	return plaintext_len;
 }
@@ -205,21 +254,16 @@ gen_cmac(unsigned char *data, size_t data_len, unsigned char *key,
 	CMAC_CTX *ctx = CMAC_CTX_new();
 	if (bit_mode == 128)
 	{
-		if (CMAC_Init(ctx, key, bit_mode/8, EVP_aes_128_cbc(), NULL) != 1) ERR_print_errors_fp(stderr);
+		if (CMAC_Init(ctx, key, bit_mode/8, EVP_aes_128_ecb(), NULL) != 1) ERR_print_errors_fp(stderr);
 	}
 	else
 	{
-		if (CMAC_Init(ctx, key, bit_mode/8, EVP_aes_256_cbc(), NULL) != 1) ERR_print_errors_fp(stderr);
+		if (CMAC_Init(ctx, key, bit_mode/8, EVP_aes_256_ecb(), NULL) != 1) ERR_print_errors_fp(stderr);
 	}
 
 	if (CMAC_Update(ctx, data, data_len) != 1) ERR_print_errors_fp(stderr);
 	
-	size_t size_read = 0;
-	do
-	{
-		if (CMAC_Final(ctx, cmac+size_read, &mactlen) != 1) ERR_print_errors_fp(stderr);
-		size_read += mactlen;
-	} while (size_read != bit_mode/8);
+	if (CMAC_Final(ctx, cmac, &mactlen) != 1) ERR_print_errors_fp(stderr);
 
 	CMAC_CTX_cleanup(ctx);
 	CMAC_CTX_free(ctx);
@@ -321,7 +365,7 @@ main(int argc, char **argv)
 
 
 	/* check arguments */
-	// check_args(input_file, output_file, password, bit_mode, op_mode);
+	check_args(input_file, output_file, password, bit_mode, op_mode);
 
 
 
@@ -335,37 +379,32 @@ main(int argc, char **argv)
 
 	/* Keygen from password */
 	
-	bit_mode = 256;
+	int bit_mode = 128;
 
-	// unsigned char password [] = "test";
-	// unsigned char iv [] = "12345673";
-	// unsigned char * derived_key = (unsigned char *)malloc((bit_mode/8)*sizeof(unsigned char));
-	// keygen(password, derived_key, iv, bit_mode);
+	unsigned char password [] = "TUC2015030100";
+	unsigned char iv [EVP_MAX_IV_LENGTH] = {0};
+	unsigned char key[EVP_MAX_KEY_LENGTH] = {0};
+	keygen(password, key, iv, bit_mode);
 
 
 	/* Operate on the data according to the mode */
 	/* encrypt */
+	unsigned char plaintext [] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc aliquet nibh ante, at ultricies odio ornare et. Nam mollis libero orci, id finibus metus ultricies ullamcorper. Nullam feugiat vel ipsum at imperdiet. Mauris laoreet viverra enim vitae dictum. Sed tristique placerat felis ut ullamcorper. Etiam gravida fermentum dolor, vel venenatis ante finibus non. Duis at feugiat purus. ";
+	unsigned char * ciphetext = (unsigned char *)malloc(strlen(plaintext)*2*sizeof(unsigned char));
+	int ciphertext_len = encrypt(plaintext, strlen(plaintext), key, iv, ciphetext, bit_mode);
 
 	/* decrypt */
-
+	unsigned char * plaintext_decrypted = (unsigned char *)malloc(ciphertext_len*sizeof(unsigned char));
+	int plaintext_len = decrypt(ciphetext, ciphertext_len, key, iv, plaintext_decrypted, bit_mode);
+	
 	/* sign */
-
-	unsigned char data [] = "dleonhsoghsilstqjiinynsounewekavfkxnekdmfmatdswpsekhvkzkxaridyeewzbljlmpaorskvkyqgufdkouynjtpdjtwxcmzuadxckjqwbyjugczgchsyqvddncmpgztqabrvcddtzusatkficrsksotzupnctkxpblk";
-	unsigned char key [] = "kifnhefpoesxsxofkifnhefpoesxsxof";
-
-	unsigned char * test = (unsigned char *)malloc((bit_mode/8)*sizeof(unsigned char));
-	gen_cmac(data, sizeof(data), key, test, bit_mode);
-
-	print_hex(test, bit_mode/8);
+	unsigned char * cmac = (unsigned char *)malloc((BLOCK_SIZE)*sizeof(unsigned char));
+	gen_cmac(plaintext, strlen(plaintext), key, cmac, bit_mode);
 
 	/* verify */
-	unsigned char hmac [] = {
-		0x08, 0x7A, 0x1C, 0x78, 0x84, 0x85, 0xD1, 0x52,
-		0x68, 0xB7, 0x0C, 0xBD, 0x7E, 0x23, 0x56, 0xA1,
-		0xA2, 0x67, 0x19, 0x8A, 0x55, 0x01, 0xA7, 0x18,
-		0x79, 0x7A, 0x98, 0xEE, 0xC2, 0x0F, 0xF8, 0xAF
-	};
-	verify_cmac(test, hmac);
+	unsigned char * cmac2 = (unsigned char *)malloc((BLOCK_SIZE)*sizeof(unsigned char));
+	gen_cmac(plaintext_decrypted, plaintext_len, key, cmac2, bit_mode);
+	if(verify_cmac(cmac, cmac2)) printf("SUCCESS!\n");
 	
 
 	/* Clean up */
