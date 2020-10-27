@@ -1,14 +1,15 @@
 CC = gcc
 DBUG = -g
-CCFLAGS = -O2 -Wall -pedantic
+CCFLAGS = -Wall -pedantic
+# -O2
 LIBSSL = -lssl -lcrypto
 
-TARGETS = assign_1
+TARGETS = assign_2
 
 
 all: $(TARGETS)
 
-assign_1: assign_1.c
+assign_2: assign_2.c
 	$(CC) $(CCFLAGS) $(DBUG) -o $@ $< $(LIBSSL)
 
 clean:

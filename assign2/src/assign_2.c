@@ -25,10 +25,15 @@ void gen_cmac(unsigned char *, size_t, unsigned char *, unsigned char *, int);
 int verify_cmac(unsigned char *, unsigned char *);
 
 
-
 /* TODO Declare your function prototypes here... */
 
-
+void GenerateSecretKey(size_t Size, unsigned char * SecretKey)
+{
+    FILE *fp;
+    fp = fopen("/dev/urandom", "r");
+    fread(SecretKey, 1, Size, fp);
+    fclose(fp);
+}
 
 /*
  * Prints the hex value of the input
@@ -145,7 +150,22 @@ keygen(unsigned char *password, unsigned char *key, unsigned char *iv,
 {
 
 	/* TODO Task A */
+	// //unsigned char h1_value[EVP_MAX_MD_SIZE];
+    // //int h1_len; 
 
+    // OpenSSL_add_all_digests();
+
+    // EVP_MD_CTX *h1ctx; 
+
+    // //Structure containing the description of the SHA1 hash.
+    // const EVP_MD *h1ptr = EVP_get_digestbyname("SHA1"); 
+
+
+    // h1ctx = EVP_MD_CTX_create();
+    // EVP_DigestInit_ex(h1ctx, h1ptr, NULL);
+    // EVP_DigestUpdate(h1ctx, password, strlen(password));
+    // EVP_DigestFinal_ex(h1ctx, key, &bit_mode);
+    // EVP_MD_CTX_destroy(h1ctx);
 }
 
 
@@ -186,9 +206,30 @@ void
 gen_cmac(unsigned char *data, size_t data_len, unsigned char *key, 
     unsigned char *cmac, int bit_mode)
 {
-
 	/* TODO Task D */
+	size_t mactlen = 0;
 
+	CMAC_CTX *ctx = CMAC_CTX_new();
+	if (bit_mode == 128)
+	{
+		if (CMAC_Init(ctx, key, bit_mode/8, EVP_aes_128_cbc(), NULL) != 1) ERR_print_errors_fp(stderr);
+	}
+	else
+	{
+		if (CMAC_Init(ctx, key, bit_mode/8, EVP_aes_256_cbc(), NULL) != 1) ERR_print_errors_fp(stderr);
+	}
+
+	if (CMAC_Update(ctx, data, data_len) != 1) ERR_print_errors_fp(stderr);
+	
+	size_t size_read = 0;
+	do
+	{
+		if (CMAC_Final(ctx, cmac+size_read, &mactlen) != 1) ERR_print_errors_fp(stderr);
+		size_read += mactlen;
+	} while (size_read != bit_mode/8);
+
+	CMAC_CTX_cleanup(ctx);
+	CMAC_CTX_free(ctx);
 }
 
 
@@ -202,8 +243,12 @@ verify_cmac(unsigned char *cmac1, unsigned char *cmac2)
 
 	verify = 0;
 
-	/* TODO Task E */
+	for (size_t i = 0; i < BLOCK_SIZE; i++)
+	{
+		if (cmac1[i] != cmac2[i]) return verify;
+	}
 
+	verify = 1;
 	return verify;
 }
 
@@ -283,7 +328,7 @@ main(int argc, char **argv)
 
 
 	/* check arguments */
-	check_args(input_file, output_file, password, bit_mode, op_mode);
+	// check_args(input_file, output_file, password, bit_mode, op_mode);
 
 
 
@@ -293,9 +338,16 @@ main(int argc, char **argv)
 
 
 	/* Initialize the library */
-
+	ERR_load_crypto_strings();
 
 	/* Keygen from password */
+	
+	bit_mode = 256;
+
+	// unsigned char password [] = "test";
+	// unsigned char iv [] = "12345673";
+	// unsigned char * derived_key = (unsigned char *)malloc((bit_mode/8)*sizeof(unsigned char));
+	// keygen(password, derived_key, iv, bit_mode);
 
 
 	/* Operate on the data according to the mode */
@@ -305,14 +357,30 @@ main(int argc, char **argv)
 
 	/* sign */
 
+	unsigned char data [] = "dleonhsoghsilstqjiinynsounewekavfkxnekdmfmatdswpsekhvkzkxaridyeewzbljlmpaorskvkyqgufdkouynjtpdjtwxcmzuadxckjqwbyjugczgchsyqvddncmpgztqabrvcddtzusatkficrsksotzupnctkxpblk";
+	unsigned char key [] = "kifnhefpoesxsxofkifnhefpoesxsxof";
+
+	unsigned char * test = (unsigned char *)malloc((bit_mode/8)*sizeof(unsigned char));
+	gen_cmac(data, sizeof(data), key, test, bit_mode);
+
+	print_hex(test, bit_mode/8);
+
 	/* verify */
-		
+	unsigned char hmac [] = {
+		0x08, 0x7A, 0x1C, 0x78, 0x84, 0x85, 0xD1, 0x52,
+		0x68, 0xB7, 0x0C, 0xBD, 0x7E, 0x23, 0x56, 0xA1,
+		0xA2, 0x67, 0x19, 0x8A, 0x55, 0x01, 0xA7, 0x18,
+		0x79, 0x7A, 0x98, 0xEE, 0xC2, 0x0F, 0xF8, 0xAF
+	};
+	verify_cmac(test, hmac);
+	
 
 	/* Clean up */
 	free(input_file);
 	free(output_file);
 	free(password);
 
+	ERR_free_strings();
 
 	/* END */
 	return 0;
