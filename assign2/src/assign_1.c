@@ -423,15 +423,18 @@ main(int argc, char **argv)
 	unsigned char key[EVP_MAX_KEY_LENGTH] = {0};
 	keygen(password, key, iv, bit_mode);
 
+	// read file
+	unsigned char * input_content = NULL;
+	int input_len = 0;
+	if (!ReadEntireFile(input_file, &input_content, &input_len))
+	{
+		printf("Could not read file\n");
+	}
 
 	switch (op_mode)
 	{
 		case 0:		// Encrypt
 		{
-			unsigned char * input_content = NULL;
-			int input_len = 0;
-			ReadEntireFile(input_file, &input_content, &input_len);
-
 			// Caclulate ciphertext size by CipherText = PlainText + BLOCK_SIZE - (PlainText MOD BLOCK_SIZE)
 			unsigned char * ciphertext = (unsigned char *)malloc((input_len + BLOCK_SIZE - (input_len % BLOCK_SIZE))*sizeof(unsigned char));
 			int ciphertext_len = encrypt(input_content, input_len, key, iv, ciphertext, bit_mode);
@@ -443,10 +446,6 @@ main(int argc, char **argv)
 
 		case 1:		// Decrypt
 		{
-			unsigned char * input_content = NULL;
-			int input_len = 0;
-			ReadEntireFile(input_file, &input_content, &input_len);
-
 			unsigned char * decrypted_content = (unsigned char *)malloc((input_len)*sizeof(unsigned char));
 			int output_len = decrypt(input_content, input_len, key, iv, decrypted_content, bit_mode);
 
@@ -457,10 +456,6 @@ main(int argc, char **argv)
 
 		case 2:		// Sign
 		{
-			unsigned char * input_content = NULL;
-			int input_len = 0;
-			ReadEntireFile(input_file, &input_content, &input_len);
-
 			// Caclulate ciphertext size by CipherText = PlainText + BLOCK_SIZE - (PlainText MOD BLOCK_SIZE)
 			unsigned char * ciphertext = (unsigned char *)malloc((input_len + BLOCK_SIZE - (input_len % BLOCK_SIZE))*sizeof(unsigned char));
 			int ciphertext_len = encrypt(input_content, input_len, key, iv, ciphertext, bit_mode);
@@ -475,10 +470,6 @@ main(int argc, char **argv)
 
 		case 3:		// Verify
 		{
-			unsigned char * input_content = NULL;
-			int input_len = 0;
-			ReadEntireFile(input_file, &input_content, &input_len);
-
 			unsigned char * decrypted_content = (unsigned char *)malloc((input_len)*sizeof(unsigned char));
 			int output_len = decrypt(input_content, input_len-BLOCK_SIZE, key, iv, decrypted_content, bit_mode);
 
@@ -491,12 +482,14 @@ main(int argc, char **argv)
 			}
 			else
 			{
-				printf("CMAC not verified!\n");
+				printf("Could verify file!\n");
 			}
 		} break;
 	}
 
 	/* Clean up */
+	free(input_content);
+
 	free(input_file);
 	free(output_file);
 	free(password);
