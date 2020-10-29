@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include <openssl/evp.h>
 #include <openssl/err.h>
@@ -27,12 +28,57 @@ int verify_cmac(unsigned char *, unsigned char *);
 
 /* TODO Declare your function prototypes here... */
 
-void GenerateSecretKey(size_t Size, unsigned char * SecretKey)
+// https://stackoverflow.com/a/14002993
+bool ReadEntireFile(char * filename, unsigned char ** content, int * content_size)
 {
-    FILE *fp;
-    fp = fopen("/dev/urandom", "r");
-    fread(SecretKey, 1, Size, fp);
-    fclose(fp);
+	FILE *f = fopen(filename, "rb");
+	if (f == NULL)
+	{
+		return false;
+	}
+	
+
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+
+	*content = (unsigned char *)malloc((fsize + 1)*sizeof(unsigned char));
+	fread(*content, 1, fsize, f);
+	fclose(f);
+
+	(*content)[fsize] = 0;
+	*content_size = fsize;
+
+	return true;
+}
+
+// https://github.com/DimitrisKas/disastertools/blob/master/project3/util.h
+// Code written by me for a different project.
+
+/**
+ * Create a file if it does not exist or truncate existing file and write entire buffer intoo it.
+ * @param Filename off file to be created.
+ * @param Content buffer with data to write to file.
+ * @param Size number of bytes in buffer to write to file.
+ * @return true if successful otherwise false.
+ */
+bool WriteEntireFile(char * Filename, void * Content, unsigned int Size)
+{
+    FILE* File = fopen(Filename, "w+");
+    if (File == NULL)
+    {
+        // DebugPrint("Could not open file for writing\n");
+        return false;
+    }
+
+    if (Content != NULL && Size != 0)
+    {
+        fwrite(Content, 1, Size, File);
+    }
+    
+    fclose(File);
+
+    return true;
 }
 
 /*
@@ -153,11 +199,11 @@ keygen(unsigned char *password, unsigned char *key, unsigned char *iv,
 	int size = 0;
 	if (bit_mode == 128)
 	{
-		size = EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha1(), NULL, password, strlen(password), 1000, key, iv);
+		size = EVP_BytesToKey(EVP_aes_128_ecb(), EVP_sha1(), NULL, password, strlen((char *)password), 1, key, iv);
 	}
 	else
 	{
-		size = EVP_BytesToKey(EVP_aes_256_ecb(), EVP_sha1(), NULL, password, strlen(password), 1000, key, iv);
+		size = EVP_BytesToKey(EVP_aes_256_ecb(), EVP_sha1(), NULL, password, strlen((char *)password), 1, key, iv);
 	}
 
 	if(!size) ERR_print_errors_fp(stderr);
@@ -354,7 +400,7 @@ main(int argc, char **argv)
 			op_mode = 2;
 			break;
 		case 'v':
-			/* if op_mode == 1 the tool verifies */
+				/* if op_mode == 1 the tool verifies */
 			op_mode = 3;
 			break;
 		case 'h':
@@ -367,45 +413,88 @@ main(int argc, char **argv)
 	/* check arguments */
 	check_args(input_file, output_file, password, bit_mode, op_mode);
 
-
-
 	/* TODO Develop the logic of your tool here... */
-
-
-
-
+	
 	/* Initialize the library */
 	ERR_load_crypto_strings();
 
 	/* Keygen from password */
-	
-	int bit_mode = 128;
-
-	unsigned char password [] = "TUC2015030100";
 	unsigned char iv [EVP_MAX_IV_LENGTH] = {0};
 	unsigned char key[EVP_MAX_KEY_LENGTH] = {0};
 	keygen(password, key, iv, bit_mode);
 
 
-	/* Operate on the data according to the mode */
-	/* encrypt */
-	unsigned char plaintext [] = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc aliquet nibh ante, at ultricies odio ornare et. Nam mollis libero orci, id finibus metus ultricies ullamcorper. Nullam feugiat vel ipsum at imperdiet. Mauris laoreet viverra enim vitae dictum. Sed tristique placerat felis ut ullamcorper. Etiam gravida fermentum dolor, vel venenatis ante finibus non. Duis at feugiat purus. ";
-	unsigned char * ciphetext = (unsigned char *)malloc(strlen(plaintext)*2*sizeof(unsigned char));
-	int ciphertext_len = encrypt(plaintext, strlen(plaintext), key, iv, ciphetext, bit_mode);
+	switch (op_mode)
+	{
+		case 0:		// Encrypt
+		{
+			unsigned char * input_content = NULL;
+			int input_len = 0;
+			ReadEntireFile(input_file, &input_content, &input_len);
 
-	/* decrypt */
-	unsigned char * plaintext_decrypted = (unsigned char *)malloc(ciphertext_len*sizeof(unsigned char));
-	int plaintext_len = decrypt(ciphetext, ciphertext_len, key, iv, plaintext_decrypted, bit_mode);
-	
-	/* sign */
-	unsigned char * cmac = (unsigned char *)malloc((BLOCK_SIZE)*sizeof(unsigned char));
-	gen_cmac(plaintext, strlen(plaintext), key, cmac, bit_mode);
+			// Caclulate ciphertext size by CipherText = PlainText + BLOCK_SIZE - (PlainText MOD BLOCK_SIZE)
+			unsigned char * ciphertext = (unsigned char *)malloc((input_len + BLOCK_SIZE - (input_len % BLOCK_SIZE))*sizeof(unsigned char));
+			int ciphertext_len = encrypt(input_content, input_len, key, iv, ciphertext, bit_mode);
 
-	/* verify */
-	unsigned char * cmac2 = (unsigned char *)malloc((BLOCK_SIZE)*sizeof(unsigned char));
-	gen_cmac(plaintext_decrypted, plaintext_len, key, cmac2, bit_mode);
-	if(verify_cmac(cmac, cmac2)) printf("SUCCESS!\n");
-	
+			WriteEntireFile(output_file, ciphertext, ciphertext_len);
+
+			free(ciphertext);
+		}break;
+
+		case 1:		// Decrypt
+		{
+			unsigned char * input_content = NULL;
+			int input_len = 0;
+			ReadEntireFile(input_file, &input_content, &input_len);
+
+			unsigned char * decrypted_content = (unsigned char *)malloc((input_len)*sizeof(unsigned char));
+			int output_len = decrypt(input_content, input_len, key, iv, decrypted_content, bit_mode);
+
+			WriteEntireFile(output_file, decrypted_content, output_len);
+
+			free(decrypted_content);
+		}break;
+
+		case 2:		// Sign
+		{
+			unsigned char * input_content = NULL;
+			int input_len = 0;
+			ReadEntireFile(input_file, &input_content, &input_len);
+
+			// Caclulate ciphertext size by CipherText = PlainText + BLOCK_SIZE - (PlainText MOD BLOCK_SIZE)
+			unsigned char * ciphertext = (unsigned char *)malloc((input_len + BLOCK_SIZE - (input_len % BLOCK_SIZE))*sizeof(unsigned char));
+			int ciphertext_len = encrypt(input_content, input_len, key, iv, ciphertext, bit_mode);
+
+			ciphertext = (unsigned char *)realloc(ciphertext, (ciphertext_len + BLOCK_SIZE)*sizeof(unsigned char));
+			gen_cmac(input_content, input_len, key, ciphertext+ciphertext_len, bit_mode);
+			
+			WriteEntireFile(output_file, ciphertext, ciphertext_len+BLOCK_SIZE);
+
+			free(ciphertext);
+		}break;
+
+		case 3:		// Verify
+		{
+			unsigned char * input_content = NULL;
+			int input_len = 0;
+			ReadEntireFile(input_file, &input_content, &input_len);
+
+			unsigned char * decrypted_content = (unsigned char *)malloc((input_len)*sizeof(unsigned char));
+			int output_len = decrypt(input_content, input_len-BLOCK_SIZE, key, iv, decrypted_content, bit_mode);
+
+			unsigned char * cmac = (unsigned char *)malloc(BLOCK_SIZE*sizeof(unsigned char));
+			gen_cmac(decrypted_content, output_len, key, cmac, bit_mode);
+
+			if (verify_cmac(input_content+input_len-BLOCK_SIZE, cmac))
+			{
+				WriteEntireFile(output_file, decrypted_content, output_len);
+			}
+			else
+			{
+				printf("CMAC not verified!\n");
+			}
+		} break;
+	}
 
 	/* Clean up */
 	free(input_file);
