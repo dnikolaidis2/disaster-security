@@ -1,7 +1,7 @@
 CC = gcc
 DBUG = -g
-CCFLAGS = -Wall -pedantic
-LIBSSL = -O2 -lssl -lcrypto
+CCFLAGS = -Wall -O2 -pedantic -Wno-unused-result
+LIBSSL = -lssl -lcrypto
 
 TARGETS = assign_1
 

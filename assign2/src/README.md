@@ -8,9 +8,21 @@ For this assignment we finished the implementation of a small tool for encryptio
 ## Task F.4
 Neither of the files hpy414_verifyme_256.txt and hpy414_verifyme_128.txt can be verified using the tool as decrscibed in this exercise.
 
-## Example
+## Examples
 ```
 make && ./assign_1 -h
+
+./assign_1 -i encryptme_256.txt -o decryptme_256.txt -b 256 -p TUC2015030100 -e
+
+./assign_1 -i hpy414_decryptme_128.txt -o hpy414_encryptme_128.txt -b 128 -p hpy414 -d
+
+./assign_1 -i signme_128.txt -o verifyme_128.txt -b 128 -p TUC2015030100 -s
+
+./assign_1 -i hpy414_verifyme_256.txt -o hpy414_signme_256.txt -b 256 -p hpy414 -v
+Could verify file!
+
+./assign_1 -i hpy414_verifyme_128.txt -o hpy414_signme_128.txt -b 128 -p hpy414 -v
+Could verify file!
 ```
 
 ## Assign_1 Tool
