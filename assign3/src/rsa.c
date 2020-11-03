@@ -1,6 +1,9 @@
 #include "rsa.h"
 #include "utils.h"
 
+#include <stdbool.h>
+#include <math.h>
+
 /*
  * Sieve of Eratosthenes Algorithm
  * https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes
@@ -13,10 +16,36 @@
 size_t *
 sieve_of_eratosthenes(int limit, int *primes_sz)
 {
-	size_t *primes;
+	size_t *primes = (size_t *)malloc(limit*sizeof(size_t));
 
-	/* TODO */	
+	bool * A = (bool *)malloc((limit+1)*sizeof(bool));
+	memset(A+2, true, limit-1);
 
+	for (size_t i = 2; i < sqrt(limit); i++)
+	{
+		if (A[i])
+		{	
+			int inc = 1;
+			for (size_t j = pow(i, 2); j < limit; j = pow(i, 2)+inc*i)
+			{
+				inc++;
+				A[j] = false;
+			}
+		}
+	}
+
+	int prime_inc = 0;
+	for (size_t i = 2; i < limit-1; i++)
+	{
+		if (A[i])
+		{
+			primes[prime_inc] = i;
+			prime_inc++;
+		}
+	}
+
+	primes = (size_t *)realloc(primes, prime_inc*sizeof(size_t));
+	*primes_sz = prime_inc;
 	return primes;
 }
 
