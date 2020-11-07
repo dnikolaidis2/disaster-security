@@ -34,7 +34,6 @@ sieve_of_eratosthenes(int limit, int *primes_sz)
 		}
 	}
 
-	// Using the A array we get all true indexes and save them in the prime array.
 	int prime_inc = 0;
 	for (size_t i = 2; i < limit-1; i++)
 	{
