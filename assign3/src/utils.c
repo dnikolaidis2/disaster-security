@@ -105,4 +105,87 @@ check_args(char *input_file, char *output_file, char *key_file, int op_mode)
 	}
 }
 
+bool read_key_file(char * filename, size_t* a, size_t* b)
+{
+	FILE* fp = fopen(filename, "rb");
+    if (fp == NULL)
+    {
+        return false;
+    }
 
+	fread(a, sizeof(a), 1, fp);
+	fread(b, sizeof(b), 1, fp);
+    
+    fclose(fp);
+
+	return true;
+}
+
+bool write_key_file(char * filename, size_t a, size_t b)
+{
+	FILE* fp = fopen(filename, "w+");
+    if (fp == NULL)
+    {
+        return false;
+    }
+
+	fwrite(&a, sizeof(a), 1, fp);
+	fwrite(&b, sizeof(b), 1, fp);
+    
+    fclose(fp);
+
+	return true;
+}
+
+// https://stackoverflow.com/a/14002993
+bool ReadEntireFile(char * filename, unsigned char ** content, int * content_size)
+{
+	FILE *f = fopen(filename, "rb");
+	if (f == NULL)
+	{
+		return false;
+	}
+	
+
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+
+	*content = (unsigned char *)malloc((fsize + 1)*sizeof(unsigned char));
+	fread(*content, 1, fsize, f);
+	fclose(f);
+
+	(*content)[fsize] = 0;
+	*content_size = fsize;
+
+	return true;
+}
+
+// https://github.com/DimitrisKas/disastertools/blob/master/project3/util.h
+// Code written by me for a different project.
+
+/**
+ * Create a file if it does not exist or truncate existing file and write entire buffer intoo it.
+ * @param Filename off file to be created.
+ * @param Content buffer with data to write to file.
+ * @param Size number of bytes in buffer to write to file.
+ * @return true if successful otherwise false.
+ */
+bool WriteEntireFile(char * Filename, void * Content, unsigned int Size)
+{
+    FILE* File = fopen(Filename, "w+");
+    if (File == NULL)
+    {
+        // DebugPrint("Could not open file for writing\n");
+        return false;
+    }
+
+    if (Content != NULL && Size != 0)
+    {
+        fwrite(Content, 1, Size, File);
+    }
+    
+    fclose(File);
+
+    return true;
+}

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 
 /*
@@ -43,5 +44,12 @@ usage(void);
 void
 check_args(char *, char *, char *, int);
 
+
+bool read_key_file(char *, size_t *, size_t *);
+
+bool write_key_file(char *, size_t, size_t);
+
+bool ReadEntireFile(char * filename, unsigned char ** content, int * content_size);
+bool WriteEntireFile(char * Filename, void * Content, unsigned int Size);
 
 #endif /* _UTILS_H */

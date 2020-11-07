@@ -59,6 +59,12 @@ size_t
 mod_inverse(size_t, size_t);
 
 
+/**
+ * Performes and returnes (base^exp) % mod using 
+ * https://en.wikipedia.org/wiki/Modular_exponentiation#Memory-efficient_method
+ */
+size_t mod_exp(size_t base, size_t exp, size_t mod);
+
 /*
  * Generates an RSA key pair and saves
  * each key in a different file

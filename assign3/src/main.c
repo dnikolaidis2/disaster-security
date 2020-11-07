@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "rsa.h"
 #include "utils.h"
@@ -66,6 +67,7 @@ main(int argc, char **argv)
 	/* check arguments */
 	check_args(input_file, output_file, key_file, op_mode);
 
+	srand(time(NULL));
 
 	/* serve each mode... */
 	switch (op_mode) {
