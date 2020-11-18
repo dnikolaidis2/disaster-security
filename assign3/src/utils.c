@@ -145,7 +145,6 @@ bool ReadEntireFile(char * filename, unsigned char ** content, int * content_siz
 	{
 		return false;
 	}
-	
 
 	fseek(f, 0, SEEK_END);
 	long fsize = ftell(f);

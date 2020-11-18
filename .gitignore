@@ -4,3 +4,8 @@
 **/assign_1
 **/assign_3
 .vscode/*
+
+*.so
+**/test_aclog
+**/acmonitor
+**/file_*
