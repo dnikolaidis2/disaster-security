@@ -92,13 +92,13 @@ FILE * fopen(const char *path, const char *mode)
 
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
-	fprintf(log_file, "%u \"%s\" %d-%02d-%02d %lu %d %d ", 
-			getuid(), 
-			full_path, 
-			tm.tm_year + 1900, 
+	fprintf(log_file, "%u \"%s\" %d-%02d-%02d %lu %d %d ",
+			getuid(),
+			full_path,
+			tm.tm_year + 1900,
 			tm.tm_mon + 1,
-			tm.tm_mday, 
-			(unsigned long)t, 
+			tm.tm_mday,
+			(unsigned long)t,
 			!will_create,
 			access_denied);
 
@@ -122,6 +122,8 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 	original_fwrite = dlsym(RTLD_NEXT, "fwrite");
 	original_fwrite_ret = (*original_fwrite)(ptr, size, nmemb, stream);
 
+	fflush(stream);
+
 	FILE *(*original_fopen)(const char*, const char*);
 
 	original_fopen = dlsym(RTLD_NEXT, "fopen");
@@ -140,6 +142,12 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 		printf("failed to readlink\n");
 	}
 	full_path[r] = '\0';
+
+	bool access_denied = false;
+	if (access(full_path, W_OK) != 0)
+	{
+		access_denied = true;
+	}
 
 	unsigned char fingerprint [MD5_DIGEST_LENGTH] = {0};
 	FILE* tmp = (*original_fopen)(full_path, "r");
@@ -163,7 +171,7 @@ size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 			tm.tm_mday,
 			(unsigned long)t,
 			2,
-			0);
+			access_denied);
 
 	for (size_t i = 0; i < MD5_DIGEST_LENGTH; i++)
 	{
