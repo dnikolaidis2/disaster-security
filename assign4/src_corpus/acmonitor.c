@@ -23,6 +23,12 @@ typedef struct entry {
 	/* add here other fields if necessary */
 } entry;
 
+typedef struct illegal_acess {
+	int uid;
+
+	char ** filenames;
+	int file_count;
+} illegal_acess;
 
 void usage(void)
 {
@@ -94,9 +100,8 @@ void list_unauthorized_accesses(FILE *log)
 	int count;
 	log_parse(log, &entries, &count);
 
-	int * uid_list = NULL;
-	int * illegal_access = NULL;
-	int uid_count = 0;
+	illegal_acess * accesses = NULL;
+	int list_size = 0;
 
 	for (size_t i = 0; i < count; i++)
 	{
@@ -105,56 +110,82 @@ void list_unauthorized_accesses(FILE *log)
 		{
 			// Is the uid in uid list?
 			int index = -1;
-			for (size_t j = 0; j < uid_count; j++)
+			for (size_t j = 0; j < list_size; j++)
 			{
-				if (uid_list[j] == entries[i]->uid)
+				if (accesses[j].uid == entries[i]->uid)
 				{
 					index = j;
 				}
 			}
-			
+
+			bool file_exists = false;
+
 			// Increment illegal access counter
 			if (index >= 0)
 			{
-				illegal_access[index]++;
+				// has this file already been logged?
+				for (size_t k = 0; k < accesses[index].file_count; k++)
+				{
+					if (strcmp(accesses[index].filenames[k], entries[i]->path) == 0)
+					{
+						file_exists = true;
+					}
+				}
 			}
 			else	// else enlarge arrays and add the id to the list
 			{
-				uid_count++;
-				uid_list = realloc(uid_list, uid_count*sizeof(int));
-				illegal_access = realloc(illegal_access, uid_count*sizeof(int));
+				list_size++;
+				accesses = (illegal_acess *)realloc(accesses, list_size*sizeof(illegal_acess));
 				
-				uid_list[uid_count - 1] = entries[i]->uid;
-				illegal_access[uid_count - 1] = 1;
+				index = list_size - 1;
+				accesses[index].file_count = 0;
+				accesses[index].uid = entries[i]->uid;
+			}
+			
+			if (!file_exists)
+			{
+				accesses[index].file_count++;
+				accesses[index].filenames = (char **)realloc(accesses[index].filenames,
+															 accesses[index].file_count*sizeof(char **));
+				
+				int tmp_index = accesses[index].file_count - 1;
+				accesses[index].filenames[tmp_index] = (char *)malloc((strlen(entries[i]->path) + 1)*sizeof(char));
+				strcpy(accesses[index].filenames[tmp_index], entries[i]->path);
 			}
 		}
 	}
 
 	bool first = true;
-	for (size_t i = 0; i < uid_count; i++)
+	for (size_t i = 0; i < list_size; i++)
 	{
-		if (illegal_access[i] >= 7)
+		if (accesses[i].file_count >= 7)
 		{
 			if (first)
 			{
-				printf("uid\taccess count\n");
+				printf("uid\tfile count\n");
 				first = false;
 			}
 			
-			printf("%d\t%d\n", uid_list[i], illegal_access[i]);
+			printf("%d\t%d\n", accesses[i].uid, accesses[i].file_count);
 		}
 	}
-	
 	
 	for (size_t i = 0; i < count; i++)
 	{
 		free(entries[count]);
 	}
-	
 	free(entries);
-	free(uid_list);
-	free(illegal_access);
 	
+	for (size_t i = 0; i < list_size; i++)
+	{
+		for (size_t j = 0; j < accesses[i].file_count; j++)
+		{
+			free(accesses[i].filenames[j]);
+		}
+		free(accesses[i].filenames);
+	}
+	free(accesses);
+
 	return;
 }
 

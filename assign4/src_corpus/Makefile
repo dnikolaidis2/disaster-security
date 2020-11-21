@@ -9,7 +9,7 @@ acmonitor: acmonitor.c
 test_aclog: test_aclog.c 
 	gcc -g test_aclog.c -o test_aclog
 
-run: logger.so test_aclog
+run: logger test_aclog
 	LD_PRELOAD=./logger.so ./test_aclog
 
 clean:

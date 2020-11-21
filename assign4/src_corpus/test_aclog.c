@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 int main() 
 {
@@ -26,12 +27,48 @@ int main()
 
 	}
 
+	/* add your code here */
+	for (i = 0; i < 10; i++) 
+	{
+		chmod(filenames[i], 0444);
+	}
+	
+	for (i = 0; i < 10; i++) {
+
+		file = fopen(filenames[i], "r");
+		if (file == NULL) 
+			printf("fopen error\n");
+		else {
+			bytes = fwrite(filenames[i], strlen(filenames[i]), 1, file);
+			fclose(file);
+		}
+	}
+
+	for (i = 0; i < 10; i++) {
+
+		file = fopen(filenames[i], "w+");
+		if (file == NULL) 
+			printf("fopen error\n");
+		else {
+			bytes = fwrite(filenames[i], strlen(filenames[i]), 1, file);
+			fclose(file);
+		}
+	}
 
 	/* add your code here */
-	/* ... */
-	/* ... */
-	/* ... */
-	/* ... */
+	for (i = 0; i < 10; i++) 
+	{
+		chmod(filenames[i], 0666);
+	}
 
+	for (i = 0; i < 10; i++) {
 
+		file = fopen(filenames[i], "w+");
+		if (file == NULL) 
+			printf("fopen error\n");
+		else {
+			bytes = fwrite(filenames[i], strlen(filenames[i]), 1, file);
+			fclose(file);
+		}
+	}
 }
