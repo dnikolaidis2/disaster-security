@@ -1,0 +1,8 @@
+# Assignment 4 - ΗΡΥ414
+Dimitrios Nikolaidis
+AM 2015030100
+
+For this assignment a small logging library was created that overwrites the standard fopen and fwrite functions and logs them. The library that
+is loaded using LD_PRELOAD environment variable creates a file in the same directory as th program tha it was called from named file_loggin.log.
+To read this file a special log monitoring tool was created called acmonitor that has two modes. Show all illegal users and show which user accessed
+which files and how many times the file was modified.
