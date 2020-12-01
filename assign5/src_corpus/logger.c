@@ -112,6 +112,86 @@ FILE * fopen(const char *path, const char *mode)
 	return original_fopen_ret;
 }
 
+FILE * fopen64(const char *path, const char *mode)
+{
+	bool file_exists = false;
+	if (access(path, F_OK) == 0)
+	{
+		file_exists = true;
+	}
+
+	bool will_create = false;
+	if (strpbrk(mode, "wa") != NULL && file_exists == false)
+	{
+		will_create = true;
+	}
+
+	FILE *original_fopen_ret;
+	FILE *(*original_fopen)(const char*, const char*);
+
+	/* call the original fopen function */
+	original_fopen = dlsym(RTLD_NEXT, "fopen64");
+	original_fopen_ret = (*original_fopen)(path, mode);
+
+	/* add your code here */
+	FILE *log_file = (*original_fopen)(LOGFILE, "a+");
+
+	// bool fopen_failed = false;
+	bool access_denied = false;
+	unsigned char fingerprint [MD5_DIGEST_LENGTH] = {0};
+
+	if (original_fopen_ret == 0)
+	{
+		// fopen_failed = true;
+		if (errno == EACCES)
+		{
+			access_denied = true;
+		}
+		else
+		{
+			printf("Unnown error!\ncode: %d\n", errno);
+		}
+	}
+	else
+	{
+		fclose(original_fopen_ret);
+
+		original_fopen_ret = (*original_fopen)(path, "r");
+
+		unsigned char * file_content;
+		int content_length = 0;
+		ReadEntireFile(original_fopen_ret, &file_content, &content_length);
+		MD5(file_content, content_length, fingerprint);
+		
+		fclose(original_fopen_ret);
+		original_fopen_ret = (*original_fopen)(path, mode);
+		free(file_content);
+	}
+
+	char full_path [PATH_MAX] = {0};
+	realpath(path, full_path);
+
+	time_t t = time(NULL);
+	struct tm tm = *localtime(&t);
+	fprintf(log_file, "%u \"%s\" %d-%02d-%02d %lu %d %d ",
+			getuid(),
+			full_path,
+			tm.tm_year + 1900,
+			tm.tm_mon + 1,
+			tm.tm_mday,
+			(unsigned long)t,
+			!will_create,
+			access_denied);
+
+	for (size_t i = 0; i < MD5_DIGEST_LENGTH; i++)
+	{
+		fprintf(log_file, "%02X", fingerprint[i]);
+	}
+	fprintf(log_file, "\n");
+	
+	fclose(log_file);
+	return original_fopen_ret;
+}
 
 size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream)
 {

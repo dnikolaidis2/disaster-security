@@ -40,6 +40,8 @@ void usage(void)
 		   "-m, Prints malicious users\n"
 		   "-i <filename>, Prints table of users that modified "
 		   "the file <filename> and the number of modifications\n"
+		   "-v <number of files>, Prints the total number of files created in the last 20 minutes\n"
+		   "-e, Prints all the files that were encrypted by the ransomware\n"
 		   "-h, Help message\n\n"
 		   );
 
@@ -277,6 +279,71 @@ void list_file_modifications(FILE *log, char *file_to_scan)
 	return;
 }
 
+void list_encrypted_files(FILE* log)
+{
+	/* add your code here */
+	entry ** entries;
+	int count;
+	log_parse(log, &entries, &count);
+
+	for (size_t i = 0; i < count; i++)
+	{
+		if (entries[i]->access_type == 0)
+		{
+			char * extension = strrchr(entries[i]->filename, '.');
+			if (extension != NULL)
+			{
+				if (strcmp(extension, ".encrypt") == 0)
+				{
+					char filename [PATH_MAX] = {0};
+					int size_tmp = extension - entries[i]->filename;
+					strncpy(filename, entries[i]->filename, size_tmp);
+					filename[size_tmp] = 0;
+					
+					for (size_t j = i-1; j > 0; j--)
+					{
+						if (entries[j]->access_type == 1)
+						{
+							if (strcmp(filename, entries[j]->filename) == 0)
+							{
+								printf("%s\n", entries[j]->path);
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+}
+
+void list_number_files_created_recently(FILE* log, int min_count)
+{
+	/* add your code here */
+	entry ** entries;
+	int count;
+	log_parse(log, &entries, &count);
+
+	time_t now = time(NULL);
+	time_t recently = now - 1200;
+
+	int created_recently = 0;
+	for (size_t i = 0; i < count; i++)
+	{
+		if (entries[i]->access_type == 0 && entries[i]->time >= recently)
+		{
+			created_recently++;
+		}
+	}
+
+	if (created_recently >= min_count)
+	{
+		printf("%d files created in the last 20 minutes\n", created_recently);
+	}
+
+	return;
+}
 
 int main(int argc, char *argv[])
 {
@@ -292,13 +359,22 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	while ((ch = getopt(argc, argv, "hi:m")) != -1) {
+	while ((ch = getopt(argc, argv, "hi:m:v:e")) != -1) {
 		switch (ch) {		
 		case 'i':
 			list_file_modifications(log, optarg);
 			break;
 		case 'm':
 			list_unauthorized_accesses(log);
+			break;
+		case 'v':
+		{
+			int min = atoi(optarg);
+			list_number_files_created_recently(log, min);
+			break;
+		}
+		case 'e':
+			list_encrypted_files(log);
 			break;
 		default:
 			usage();

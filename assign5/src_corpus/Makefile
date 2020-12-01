@@ -1,4 +1,4 @@
-all: logger acmonitor test_aclog
+all: logger acmonitor
 
 logger: logger.c
 	gcc -g -Wall -Wno-incompatible-pointer-types -fPIC -shared -o logger.so logger.c -lcrypto -ldl 
@@ -6,14 +6,7 @@ logger: logger.c
 acmonitor: acmonitor.c 
 	gcc -g -Wno-incompatible-pointer-types acmonitor.c -o acmonitor
 
-test_aclog: test_aclog.c 
-	gcc -g -Wno-incompatible-pointer-types test_aclog.c -o test_aclog
-
-run: logger test_aclog
-	LD_PRELOAD=./logger.so ./test_aclog
-
 clean:
 	rm -rf logger.so
-	rm -rf test_aclog
 	rm -rf acmonitor
-
+	rm -rf file_*
