@@ -300,7 +300,7 @@ void list_encrypted_files(FILE* log)
 					strncpy(filename, entries[i]->filename, size_tmp);
 					filename[size_tmp] = 0;
 					
-					for (size_t j = i-1; j > 0; j--)
+					for (size_t j = i-1; j >= 0; j--)
 					{
 						if (entries[j]->access_type == 1)
 						{
@@ -315,7 +315,13 @@ void list_encrypted_files(FILE* log)
 			}
 		}
 	}
-	
+
+	for (size_t i = 0; i < count; i++)
+	{
+		free(entries[count]);
+	}
+	free(entries);
+	return;
 }
 
 void list_number_files_created_recently(FILE* log, int min_count)
@@ -342,6 +348,11 @@ void list_number_files_created_recently(FILE* log, int min_count)
 		printf("%d files created in the last 20 minutes\n", created_recently);
 	}
 
+	for (size_t i = 0; i < count; i++)
+	{
+		free(entries[count]);
+	}
+	free(entries);
 	return;
 }
 

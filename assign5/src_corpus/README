@@ -1,8 +1,9 @@
-# Assignment 4 - ΗΡΥ414
+# Assignment 5 - ΗΡΥ414
 Dimitrios Nikolaidis
 AM 2015030100
 
-For this assignment a small logging library was created that overwrites the standard fopen and fwrite functions and logs them. The library that
-is loaded using LD_PRELOAD environment variable creates a file in the same directory as th program tha it was called from named file_loggin.log.
-To read this file a special log monitoring tool was created called acmonitor that has two modes. Show all illegal users and show which user accessed
-which files and how many times the file was modified.
+For this assignment we expanded upon assignment 4 by implementing a simple ransoware program in bash that creates a number test files and encrypts
+them. This ransoware also provides a decrypt function with the -d option. To be able to log the file createion the tee command line utility was used.
+To also log the encryption of the files logger.so was expanded by also logging fopen64 in exactly the same way as fopen as it is the function used
+by openssl. The acmonitor tool was also expanded by adding two more command line options. One for finding a large amount off file creations (-v).
+Also one for detecting files that were opened to be read and then encrypted (-e).

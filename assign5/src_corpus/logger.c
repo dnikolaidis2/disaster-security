@@ -30,7 +30,6 @@ bool ReadEntireFile(FILE * f, unsigned char ** content, int * content_size)
 	return true;
 }
 
-
 FILE * fopen(const char *path, const char *mode)
 {
 	bool file_exists = false;

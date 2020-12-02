@@ -3,7 +3,8 @@
 key="supper secret key"
 
 if [[ $# -lt 1 ]]; then
-    printf "Usage thingy here!\n"
+    printf "\n\nUsage:\n\t./ransomware.sh [X | -d]\n <number of files>, creates a number of test files and encrypts them simulating the process of a randomware\n"
+    printf " -d, decrypt all files that were encryted in this directory\n\n"
     exit 1
 fi
 
