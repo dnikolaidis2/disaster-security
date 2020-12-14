@@ -15,32 +15,21 @@
 
 #define IPV4_ADDR_LEN 4
 #define IPV6_ADDR_LEN 16
+#define ETH_ADDR_LEN 6
 
 typedef struct eth2 {
-    u_char src [6];
-    u_char dest [6];
-    union
-    {
-        u_char type_bytes [2];
-        u_short type;
-    };
+    u_char src [ETH_ADDR_LEN];
+    u_char dest [ETH_ADDR_LEN];
+    u_short type;
 } eth2;
 
 typedef struct ipv4_header
 {
-    u_char version_ihl;
+    u_char v_ihl;
     u_char dscp_ecn;
-    union
-    {
-        u_short length;
-        u_char length_bytes[2];
-    };
+    u_short length;
     
-    union
-    {
-        u_short id;
-        u_char id_bytes[2];
-    };
+    u_short id;
 
     u_char flags_fragoffset[2];
     u_char ttl;
@@ -54,16 +43,13 @@ typedef struct ipv4_header
     u_char * options;
     u_int16_t options_size;
 } ipv4_header;
+#define IPV4_IHL(header) (((header)->v_ihl) & 0x0f)
 
 typedef struct ipv6_header
 {
     u_char ver_class_label[4];
 
-    union
-    {
-        u_short length;
-        u_char length_bytes[2];
-    };
+    u_short length;
 
     u_char proto;
     u_char hop_limit;
@@ -85,72 +71,44 @@ typedef struct ip_header
 
 typedef struct udp_header
 {
-    union
-    {
-        u_short src_port;
-        u_char src_port_bytes[2];
-    };
-    
-    union
-    {
-        u_short dst_port;
-        u_char dst_port_bytes[2];
-    };
-
-    union
-    {
-        u_short length;
-        u_char length_bytes[2];
-    };
-
+    u_short src_port;
+    u_short dst_port;
+    u_short length;
     u_char checksum[2];
 } udp_header;
 
 typedef struct tcp_header
 {
-    union
-    {
-        u_short src_port;
-        u_char src_port_bytes[2];
-    };
+    u_short src_port;
+    u_short dst_port;
+
+    u_int32_t seqno;
+    u_int32_t ackno;
     
-    union
-    {
-        u_short dst_port;
-        u_char dst_port_bytes[2];
-    };
-
-    union
-    {
-        u_int32_t seqno;
-        u_char seqno_bytes[4];
-    };
-
-    union
-    {
-        u_int32_t ackno;
-        u_char ackno_bytes[4];
-    };
-
-    union
+    union 
     {
         u_short flags;
-        u_char flags_bytes[2];
+        u_char flags_bytes [2];
     };
-
-    union
-    {
-        u_short window_size;
-        u_char window_size_bytes[2];
-    };
+    
+    u_short window_size;
 
     u_char checksum[2];
-
     u_char urgent[2];
 
     u_char * options;
     u_int16_t options_size;
 } tcp_header;
+#define TCP_OFF(header) ((((header)->flags_bytes[0]) & 0xf0) >> 4)
+#define TCP_NS(header) (((header)->flags_bytes[0]) & 0x01)
+#define TCP_SWR(header) ((((header)->flags_bytes[1]) & 0x80) >> 7)
+#define TCP_ECE(header) ((((header)->flags_bytes[1]) & 0x40) >> 6)
+#define TCP_URG(header) ((((header)->flags_bytes[1]) & 0x20) >> 5)
+#define TCP_ACK(header) ((((header)->flags_bytes[1]) & 0x10) >> 4)
+#define TCP_PSH(header) ((((header)->flags_bytes[1]) & 0x08) >> 3)
+#define TCP_RST(header) ((((header)->flags_bytes[1]) & 0x04) >> 2)
+#define TCP_SYN(header) ((((header)->flags_bytes[1]) & 0x02) >> 1)
+#define TCP_FIN(header) (((header)->flags_bytes[1]) & 0x01)
 
 typedef struct proto_header
 {
@@ -186,13 +144,13 @@ typedef struct flow
 } flow;
 
 
-static bool running = false;
+static bool running = true;
 
 
 void signal_handler(int sig_num)
 {
     signal(SIGINT, signal_handler);
-    running = true;
+    running = false;
 }
 
 void print_ipaddr(u_char *ip, u_short type)
@@ -234,8 +192,8 @@ void usage(void)
 	       "usage:\n"
 	       "\t./monitor \n"
 		   "Options:\n"
-		   "-i <device name>, \n"
-		   "-r <file name>, \n"
+		   "-i <device name>, Start packet capture from device with <device name> untill control+c is pressed\n"
+		   "-r <file name>, Use pcap file with <file name> as input.\n"
 		   "-h, Help message\n\n"
 		   );
 
@@ -250,7 +208,7 @@ size_t get_ip_header_length(ip_header *header)
     }
     else
     {
-        return (header->ipv4->version_ihl & 0x0F) * 4;
+        return IPV4_IHL(header->ipv4) * 4;
     }
 }
 
@@ -262,7 +220,7 @@ size_t get_proto_header_length(proto_header *header)
     }
     else
     {
-        return ((header->tcp->flags_bytes[0] & 0xF0) >> 4) * 4;
+        return TCP_OFF(header->tcp) * 4;
     }
 }
 
@@ -294,21 +252,46 @@ void populate_flow(flow * f, ip_header * ip, proto_header *proto)
     }
 }
 
+flow* swap_flow_src_dst(flow *f)
+{
+    u_char tmp_addr[IPV6_ADDR_LEN];
+    u_short tmp_port;
+
+    tmp_port = f->dst_port;
+    memcpy(tmp_addr, &(f->dst), IPV6_ADDR_LEN);
+
+    f->dst_port = f->src_port;
+    memcpy(&(f->dst), &(f->src), IPV6_ADDR_LEN);
+
+    f->src_port = tmp_port;
+    memcpy(&(f->src), tmp_addr, IPV6_ADDR_LEN);
+
+    return f;
+}
+
 int insert_flow_if_unique(flow *f, flow ***array, long *size)
 {
     for (long i = 0; i < *size; i++)
     {
         if (memcmp(f, (*array)[i], sizeof(flow)) == 0)
         {
-            return 1;
+            return i;
         }
+        // else
+        // {
+        //     if (memcmp(swap_flow_src_dst(f), (*array)[i], sizeof(flow)) == 0)
+        //     {
+        //         return i;
+        //     }
+        //     swap_flow_src_dst(f);
+        // }
     }
     
     *size += 1;
     *array = (flow **)realloc(*array, (*size)*sizeof(flow *));
     (*array)[(*size) - 1] = f;
 
-    return 1;
+    return (*size) - 1;
 }
 
 int main(int argc, char *argv[])
@@ -377,6 +360,9 @@ int main(int argc, char *argv[])
     flow ** flows_detected = NULL;
     long flow_count = 0;
 
+    u_int32_t * nextexp_seq = NULL;
+    long seq_count = 0;
+
     long total_packet_count = 0;
     long tcp_packet_count = 0;
     long udp_packet_count = 0;
@@ -384,8 +370,10 @@ int main(int argc, char *argv[])
     long tcp_bytes_received = 0;
     long udp_bytes_received = 0;
 
+    printf("IP Src\tIP Dst\tPort Src\tPort Dst\tProtocol\tHeader len\tPayload len\tRetransmitted\n");
+
     while (((ret = pcap_next_ex(handle, &header, &packet)) == 1) &&
-            !running)
+            running)
     {
         eth2 * eth2_frame = (eth2 *)packet;
         ip_header ip_frame = {0};
@@ -410,7 +398,22 @@ int main(int argc, char *argv[])
         {
             populate_flow(f, &ip_frame, &proto_frame);
 
-            insert_flow_if_unique(f, &flows_detected, &flow_count);
+            int id = insert_flow_if_unique(f, &flows_detected, &flow_count);
+
+            if (seq_count != flow_count)
+            {
+                seq_count = flow_count;
+                nextexp_seq = realloc(nextexp_seq, sizeof(u_int32_t)*seq_count);
+                
+                if (proto_frame.type == PROTO_TCP)
+                {
+                    nextexp_seq[id] = ntohl(proto_frame.tcp->seqno);
+                }
+                else
+                {
+                    nextexp_seq[id] = 0;
+                }
+            }
 
             print_ipaddr((f->src.ipv4), f->type);
             printf(" ");
@@ -419,24 +422,61 @@ int main(int argc, char *argv[])
             printf(" %hu %hu ", f->src_port, f->dst_port);
 
             size_t proto_header_len = get_proto_header_length(&proto_frame);
+            size_t payload_len = header->len - (sizeof(eth2) + ip_header_len + proto_header_len);
+
+            if (header->len == 60)
+            {
+                proto_header_len += payload_len;
+                payload_len = 0;
+            }
+
+            bool retransmitted = false;
             if (proto_frame.type == PROTO_UDP)
             {
                 udp_packet_count++;
-                udp_bytes_received += header->len - (sizeof(eth2) + ip_header_len + proto_header_len);
+                udp_bytes_received += header->len;
 
                 printf("UDP");
             }
             else
             {
                 tcp_packet_count++;
-                tcp_bytes_received += header->len - (sizeof(eth2) + ip_header_len + proto_header_len);
+                tcp_bytes_received += header->len;
 
                 printf("TCP");
 
                 // TODO Retransmited
+                proto_frame.tcp->seqno = ntohl(proto_frame.tcp->seqno);
+                proto_frame.tcp->flags = ntohs(proto_frame.tcp->flags);
+
+                if ((payload_len > 0 || (TCP_SYN(proto_frame.tcp) || TCP_FIN(proto_frame.tcp))) &&
+                    proto_frame.tcp->seqno < nextexp_seq[id])
+                {
+                    retransmitted = true;
+                }
+                else
+                {
+                    nextexp_seq[id] = proto_frame.tcp->seqno + payload_len;
+
+                    if ((proto_frame.tcp->flags & 0x0fff) == 0x0002 ||
+                        (proto_frame.tcp->flags & 0x0fff) == 0x0012 ||
+                        (proto_frame.tcp->flags & 0x0fff) == 0x0011)
+                    {
+                        nextexp_seq[id]++;
+                    }
+                }
             }
 
-            printf(" %ld %ld", proto_header_len, header->len - (sizeof(eth2) + ip_header_len + proto_header_len));
+            printf(" %ld %ld ", proto_header_len, payload_len);
+
+            if (retransmitted)
+            {
+                printf("Yes");
+            }
+            else
+            {
+                printf("No");
+            }
 
             printf("\n");
         }
@@ -463,7 +503,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    printf("%ld %ld %ld %ld %ld %ld %ld %ld\n",
+    printf("\nTotal Flows\tTCP Flows\tUDP Flows\tTotal Packets\tTCP Packets\tUDP Packets\tTCP Bytes\tUDP Bytes\n");
+    printf("%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\n",
             flow_count,
             tcp_flows,
             udp_flows, 
