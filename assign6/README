@@ -1,0 +1,10 @@
+# Assignment 6 - ΗΡΥ414
+Dimitrios Nikolaidis
+AM 2015030100
+
+For this assignment a packet sniffer was written in C that supports the live capturing of packets and the offline analysis
+if .pcap files -i and -r options respectively. This tools was written using the pcap library for capturing packets and reading
+pcap files. The rest was mostly done from scratch (structs for each packet type and ip version). Finally the live version of the
+capturing utility only stops and prints the final statistics after SIGINT is sent to it through the keyboard.
+
+"make all" to compile the program "./monitor -h" for more.
