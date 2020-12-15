@@ -153,19 +153,20 @@ void signal_handler(int sig_num)
     running = false;
 }
 
-void print_ipaddr(u_char *ip, u_short type)
+char * addr_to_str(u_char *ip, u_short type, char * buffer)
 {
+    int j = 0;
     if (type == ETH_TYPE_IPV4)
     {
         for (size_t i = 0; i < IPV4_ADDR_LEN; i++)
         {
             if (i == 3)
             {
-                printf("%03hhu", ip[i]);
+                j += sprintf(buffer+j, "%03hhu", ip[i]);
             }
             else
             {
-                printf("%03hhu:", ip[i]);
+                j += sprintf(buffer+j, "%03hhu:", ip[i]);
             }
         }
     }
@@ -175,14 +176,17 @@ void print_ipaddr(u_char *ip, u_short type)
         {
             if (i % 2 != 0 && i != IPV6_ADDR_LEN - 1)
             {
-                printf("%02x:", ip[i]);
+                j += sprintf(buffer+j, "%02x:", ip[i]);
             }
             else
             {
-                printf("%02x", ip[i]);
+                j += sprintf(buffer+j, "%02x", ip[i]);
             }
         }
     }
+
+    buffer[j] = 0;
+    return buffer;
 }
 
 void usage(void)
@@ -370,7 +374,8 @@ int main(int argc, char *argv[])
     long tcp_bytes_received = 0;
     long udp_bytes_received = 0;
 
-    printf("IP Src\tIP Dst\tPort Src\tPort Dst\tProtocol\tHeader len\tPayload len\tRetransmitted\n");
+    printf("%-40s%-40s%-10s%-10s%-10s%-15s%-15sRetransmitted\n",
+            "IP Src", "IP Dst", "Port Src", "Port Dst", "Protocol", "Header len", "Payload len");
 
     while (((ret = pcap_next_ex(handle, &header, &packet)) == 1) &&
             running)
@@ -415,11 +420,11 @@ int main(int argc, char *argv[])
                 }
             }
 
-            print_ipaddr((f->src.ipv4), f->type);
-            printf(" ");
-            print_ipaddr((f->dst.ipv4), f->type);
+            char ip_buffer[28];
+            printf("%-40s", addr_to_str((f->src.ipv4), f->type, ip_buffer));
+            printf("%-40s", addr_to_str((f->dst.ipv4), f->type, ip_buffer));
 
-            printf(" %hu %hu ", f->src_port, f->dst_port);
+            printf("%-10hu%-10hu", f->src_port, f->dst_port);
 
             size_t proto_header_len = get_proto_header_length(&proto_frame);
             size_t payload_len = header->len - (sizeof(eth2) + ip_header_len + proto_header_len);
@@ -436,14 +441,14 @@ int main(int argc, char *argv[])
                 udp_packet_count++;
                 udp_bytes_received += header->len;
 
-                printf("UDP");
+                printf("%-10s", "UDP");
             }
             else
             {
                 tcp_packet_count++;
                 tcp_bytes_received += header->len;
 
-                printf("TCP");
+                printf("%-10s", "TCP");
 
                 // TODO Retransmited
                 proto_frame.tcp->seqno = ntohl(proto_frame.tcp->seqno);
@@ -467,7 +472,7 @@ int main(int argc, char *argv[])
                 }
             }
 
-            printf(" %ld %ld ", proto_header_len, payload_len);
+            printf("%-15ld%-15ld", proto_header_len, payload_len);
 
             if (retransmitted)
             {
@@ -503,8 +508,9 @@ int main(int argc, char *argv[])
         }
     }
 
-    printf("\nTotal Flows\tTCP Flows\tUDP Flows\tTotal Packets\tTCP Packets\tUDP Packets\tTCP Bytes\tUDP Bytes\n");
-    printf("%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\t\t%ld\n",
+    printf("\n%-15s%-10s%-10s%-15s%-15s%-15s%-20s%-20s\n",
+            "Total Flows", "TCP Flows", "UDP Flows", "Total Packets", "TCP Packets", "UDP Packets", "TCP Bytes", "UDP Bytes");
+    printf("%-15ld%-10ld%-10ld%-15ld%-15ld%-15ld%-20ld%-20ld\n",
             flow_count,
             tcp_flows,
             udp_flows, 
@@ -513,6 +519,13 @@ int main(int argc, char *argv[])
             udp_packet_count,
             tcp_bytes_received,
             udp_bytes_received);
+
+    for (size_t i = 0; i < flow_count; i++)
+    {
+        free(flows_detected[i]);
+    }
+    free(flows_detected);
+    free(nextexp_seq);
 
     pcap_close(handle);
     return 0;
