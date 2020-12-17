@@ -1,0 +1,11 @@
+# Assignment 7 - ΗΡΥ414
+Dimitrios Nikolaidis
+AM 2015030100
+
+For this assignment a small adblocking program was created using bash. This program performs a basic adblocking function
+by adding iptable rules to block incoming requests from specific hostnames. Since iptables can only make rules for ip addresses the
+DNS lookup utility dig was used to resolve the hostnames into addresses and then block them. To keep the rules tidy a chain was used
+called adblock to hold all the rules. This is a very primitive version of adblock since most advertising services have ways to work
+around blocked ip addresses, multiple domains and dynamic redirection to alternative addresses.
+
+"sudo ./adblock -help" for more.
