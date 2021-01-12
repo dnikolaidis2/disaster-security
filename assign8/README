@@ -4,20 +4,17 @@ AM 2015030100
 
 For this assignment a small exploit was developed for the program Greeter. This program uses gets() function which is prone
 to exploitation and thus a simple buffer overflow was used to exploit it. The debugger gdb was used to reverse engineer the program
-with the help of its source code. Using gdb the address of buf was easily found as well as the size of the stack frame of the program.
-Armed with the above knowledge a payload was designed that overrides the return address on the stack with one further down the stack. After
-the overridden stack address a large(2048) nop slide was used to make sure that no matter the small changes in the stack the exploit would
-have the best chance to work (ex different environment variables from one terminal to the other). After the nop slide the shellcode
-aquired from http://shell-storm.org/shellcode/files/shellcode-606.php was placed which executes
-execve("/bin/bash", ["/bin/bash", "-p"], NULL) and gives us a terminal.
+with the help of its source code. Using gdb the address of Name was easily found as well as the size of the stack frame of the function readString.
+The program reads into buf with gets and then copies 128 bytes from buf to Name which has all memory protections turned off. Armed with this knowledge
+a payload was designed that overrides the return address on the stack with the address of Name + padding length + address length. After the padding
+and address the shellcode to be executed was placed into the buffer. This shellcode was aquired from http://shell-storm.org/shellcode/files/shellcode-606.php 
+and it only runs execve("/bin/bash", ["/bin/bash", "-p"], NULL) and gives us a terminal.
 
 To run the exploit successfully we need to make sure that the terminal we launch can accept input so we call cat after outputting the exploits output.
 For example:
-(python3 sploit.py; cat) | ./Greeter
+(python3 sploint.py; cat) | ./Greeter
 (cat input; cat) | ./Greeter
 
 On gdb:
 run < <(python3 /absolute/path/to/sploit.py; cat)
 run < <(cat input; cat)
-
-ASLR needed to be disabled with “echo 0 | sudo tee /proc/sys/kernel/randomize_va_space” to get this exploit to work.
